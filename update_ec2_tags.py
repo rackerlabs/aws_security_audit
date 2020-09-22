@@ -25,6 +25,7 @@ INSTANCES = []
 JSON_CSV = []
 CH_TAG_NAME = "CH_FRIENDLY_NAME"
 OVERWRITE_TAGS = False
+DRY_RUN = True
 
 def get_all_instances():
 
@@ -78,16 +79,20 @@ def update_tags():
     def add_tag(aws_instance_id_internal):
         for row in JSON_CSV:
             if row['instance_id'] == aws_instance_id_internal:
-                try: 
-                    ec2.create_tags(
-                        Resources=[aws_instance_id_internal],
-                        Tags = [
-                            {
-                                'Key': CH_TAG_NAME,
-                                'Value': row['friendly_name']
-                            }
-                        ]
-                    )
+                try:
+                    if DRY_RUN:
+                        print(f"Dry run: Creating tag \"{CH_TAG_NAME}\" with value \"{row['friendly_name']}\" on \"{aws_instance_id_internal}\"")
+                    else:
+                        print(f"Creating tag \"{CH_TAG_NAME}\" with value \"{row['friendly_name']}\" on \"{aws_instance_id_internal}\"")
+                        ec2.create_tags(
+                            Resources=[aws_instance_id_internal],
+                            Tags = [
+                                {
+                                    'Key': CH_TAG_NAME,
+                                    'Value': row['friendly_name']
+                                }
+                            ]
+                        )
                     return
         
                 except ClientError as e:
