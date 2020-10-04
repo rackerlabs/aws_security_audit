@@ -28,9 +28,13 @@ CHECKED_RESOURCES = [
     'AWS::RDS::DBInstance'
 ]
 
+# Stick to AWs naming for the below, to prevent false positives
 INSECURE_SSL_CIPHERS = [
     "Protocol-TLSv1",
-    "Protocol-TLSv1.1"
+    "Protocol-TLSv1.1",
+    "TLSv1",
+    "TLSv1.1"
+
 ]
 
 INSTANCES = []
@@ -306,25 +310,40 @@ def get_load_balancers(region):
             # once all listener objects have been added to the lb_object, add that to the main LOAD_BALANCERS list
             LOAD_BALANCERS.append(lb_object)
 
-        pp(LOAD_BALANCERS)
-        return
+    if len(current_alb['LoadBalancers']) > 0:
+        for lb in current_alb['LoadBalancers']:
+            # initialise the lb_object, append the type and name properties, and initialise the LISTENERS property list
+            lb_object = {}
+            lb_object['LB_TYPE'] = "alb"
+            lb_object['LB_NAME'] = lb['LoadBalancerName']
+            lb_object['LISTENERS'] = []
 
-    # if len(current_alb['LoadBalancers']) > 0:
-    #     print(f"alb: {len(current_alb['LoadBalancers'])}")
-    #     # pp(current_alb['LoadBalancers'])
+            listeners = elbv2.describe_listeners(LoadBalancerArn=lb['LoadBalancerArn'])
 
-    #     for lb in current_alb['LoadBalancers']:
-    #         pp(lb)
-    #         # print(lb['LoadBalancerName'])
+            for listener in listeners['Listeners']:
+                if 'SslPolicy' in listener:
+                    lb_listener_object = {}
+                    lb_listener_object['POLICY_NAME'] = listener['SslPolicy']
+                    policies = elbv2.describe_ssl_policies(
+                        Names=[
+                            lb_listener_object['POLICY_NAME']
+                        ]
+                    )
 
-    
-
-
-    # pp(current_elb['LoadBalancers'])
-    # if len(current_elb['LoadBalancers']) == 0:
+                    lb_listener_ciphers = []
+                    # loop through configured ciphers, make note of reference policy if there is one and record all ciphers in use
+                    for cipher in policies['SslPolicies'][0]['Ciphers']: #[0]['Ciphers']:
+                        lb_listener_ciphers.append(cipher['Name'])
         
+                    for protocol in policies['SslPolicies'][0]['SslProtocols']:
+                        lb_listener_ciphers.append(protocol)
 
+                    # add ciphers to the listener object and then add the object to the lb_object. 
+                    lb_listener_object['CIPHERS'] = lb_listener_ciphers
+                    lb_object['LISTENERS'].append(lb_listener_object)
 
+                # once all listener objects have been added to the lb_object, add that to the main LOAD_BALANCERS list
+                LOAD_BALANCERS.append(lb_object)      
     return
 
 def check_ec2(region):
