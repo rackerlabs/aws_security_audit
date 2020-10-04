@@ -37,7 +37,7 @@ INSECURE_SSL_CIPHERS = [
 
 ]
 
-INSTANCES = []
+EC2_INSTANCES = []
 EBS_DEVICES = []
 USED_REGIONS = []
 S3_BUCKETS = []
@@ -47,13 +47,13 @@ def get_all_instances():
 
     """ Get all ec2 instances in a given region """
 
-    global INSTANCES
+    global EC2_INSTANCES
 
     try:
         token = ""
         while True:
             response = ec2.describe_instances(NextToken=token)
-            INSTANCES += response['Reservations']
+            EC2_INSTANCES += response['Reservations']
 
             if 'NextToken' in response:
                 token = response['NextToken']
@@ -69,10 +69,10 @@ def get_instance_block_device_mappings():
 
     """ Get ebs devices from the ec2 response """
     
-    global INSTANCES
+    global EC2_INSTANCES
     global EBS_DEVICES
 
-    for instance in INSTANCES:
+    for instance in EC2_INSTANCES:
         devices = []
         name_tag = "NO_NAME_TAG"
 
@@ -293,7 +293,6 @@ def get_load_balancers(region):
                         ]
                     )
 
-
                     lb_listener_ciphers = []
                     # loop through configured ciphers, make note of reference policy if there is one and record all ciphers in use
                     for cipher in policies['PolicyDescriptions'][0]['PolicyAttributeDescriptions']:
@@ -389,8 +388,6 @@ def main():
     populate_used_regions()
     perform_security_checks()
     # print_details()
-
-## Currently working load balancer parsing
 
 if __name__ == "__main__":
     main()
