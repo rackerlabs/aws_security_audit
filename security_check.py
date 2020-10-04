@@ -42,6 +42,7 @@ EBS_DEVICES = []
 USED_REGIONS = []
 S3_BUCKETS = []
 LOAD_BALANCERS = [] 
+RDS_INSTANCES = []
 
 def get_all_instances():
 
@@ -345,6 +346,24 @@ def get_load_balancers(region):
                 LOAD_BALANCERS.append(lb_object)      
     return
 
+def get_rds_clusters(region):
+
+    global RDS_INSTANCES
+    rds = boto3.client('rds', region)
+
+    try:
+        db_instances = rds.describe_db_instances()['DBInstances']        
+
+    except ClientError as e:
+        print (e)
+
+    for instance in db_instances:
+        RDS_INSTANCES.append({
+            "NAME": instance['DBName'],
+            "REGION": region,
+            "ENCRYPTED": instance['StorageEncrypted']
+        })
+
 def check_ec2(region):
     return
     # Overwrite global ec2 object and update region
@@ -366,7 +385,8 @@ def check_alb(region):
     return
 
 def check_rds(region):
-    # print("Checking rds")
+    get_rds_clusters(region)
+    pp(RDS_INSTANCES)
     return
 
 def print_details():
