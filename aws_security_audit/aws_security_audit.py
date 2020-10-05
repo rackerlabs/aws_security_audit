@@ -1,37 +1,25 @@
 #!/usr/bin/env python
 
 import boto3
-import datetime
-import sys
-import xlsxwriter #https://xlsxwriter.readthedocs.io/
 from botocore.exceptions import ClientError
 from pprint import pprint as pp
+
+from config import Config
 
 # Setup clients
 ec2 = boto3.client('ec2')
 s3 = boto3.client('s3')
 
+# Pull config into main code.
+CHECKED_RESOURCES = Config.CHECKED_RESOURCES
+INSECURE_SSL_CIPHERS = Config.INSECURE_SSL_CIPHERS
+
 # initialise / declare required vars
-CHECKED_RESOURCES = [
-    'AWS::ElasticLoadBalancingV2::LoadBalancer',
-    'AWS::S3::Bucket',
-    'AWS::EC2::Instance',
-    'AWS::RDS::DBInstance'
-]
-
-# Stick to AWS naming for the below, to prevent false positives
-INSECURE_SSL_CIPHERS = [
-    "Protocol-TLSv1",
-    "Protocol-TLSv1.1",
-    "TLSv1",
-    "TLSv1.1"
-]
-
 EC2_INSTANCES = []
 EBS_DEVICES = []
 USED_REGIONS = []
 S3_BUCKETS = []
-LOAD_BALANCERS = [] 
+LOAD_BALANCERS = []
 RDS_INSTANCES = []
 
 def get_all_instances():
@@ -154,19 +142,22 @@ def perform_security_checks():
     # Kick off security checks for each region and resource type
     for region in USED_REGIONS:
         for resource in region['resources']:
-            if resource['resourceType'] == 'AWS::EC2::Instance':
-                check_ec2(region['region'])
+            if Config.EC2_CHECK:
+                if resource['resourceType'] == 'AWS::EC2::Instance':
+                    check_ec2(region['region'])
 
-            if resource['resourceType'] == 'AWS::S3::Bucket' and not S3_BUCKETS:
-                check_s3()
+            if Config.S3_CHECK:
+                if resource['resourceType'] == 'AWS::S3::Bucket' and not S3_BUCKETS:
+                    check_s3()
 
-            if resource['resourceType'] == 'AWS::ElasticLoadBalancingV2::LoadBalancer':
-                # print(region['region'])
-                check_alb(region['region'])
+            if Config.ALB_CHECK:
+                if resource['resourceType'] == 'AWS::ElasticLoadBalancingV2::LoadBalancer':
+                    check_alb(region['region'])
 
-            if resource['resourceType'] == 'AWS::RDS::DBInstance':
-                # print(region['region'])
-                check_rds(region['region'])
+            if Config.RDS_CHECK:
+                if resource['resourceType'] == 'AWS::RDS::DBInstance':
+                    check_rds(region['region'])
+
     return
 
 def get_all_s3():
@@ -319,19 +310,19 @@ def get_load_balancers(region):
                             lb_listener_object['POLICY_NAME']
                         ]
                     )
-
+    
                     lb_listener_ciphers = []
                     # loop through configured ciphers, make note of reference policy if there is one and record all ciphers in use
                     for cipher in policies['SslPolicies'][0]['Ciphers']: #[0]['Ciphers']:
                         lb_listener_ciphers.append(cipher['Name'])
-        
+    
                     for protocol in policies['SslPolicies'][0]['SslProtocols']:
                         lb_listener_ciphers.append(protocol)
-
+    
                     # add ciphers to the listener object and then add the object to the lb_object. 
                     lb_listener_object['CIPHERS'] = lb_listener_ciphers
                     lb_object['LISTENERS'].append(lb_listener_object)
-
+    
                 # once all listener objects have been added to the lb_object, add that to the main LOAD_BALANCERS list
                 LOAD_BALANCERS.append(lb_object)      
     return
@@ -355,7 +346,6 @@ def get_rds_clusters(region):
         })
 
 def check_ec2(region):
-    return
     # Overwrite global ec2 object and update region
     global ec2
     ec2 = boto3.client('ec2', region)
@@ -364,14 +354,13 @@ def check_ec2(region):
     return
 
 def check_s3():
-    return
     get_all_s3()
     check_s3_encryption()
     return
 
 def check_alb(region):
     get_load_balancers(region)
-    # print("Checking alb")
+    pp(LOAD_BALANCERS)
     return
 
 def check_rds(region):
@@ -393,7 +382,7 @@ def print_details():
             print(f'\t\t{ebs["DeviceName"]}\t{ebs["VolumeId"]}\t{ebs["Encrypted"]}')
 
         print('\n')
-        
+
 def main():
     populate_used_regions()
     perform_security_checks()
