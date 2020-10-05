@@ -1,20 +1,11 @@
-#!/usr/bin/python
-
-"""
-This script can be used to check the encrpytion status of EC2 EBS volumes
-
-Executing the script will check all EC2 instances on whichever account you are currently authenticated. 
-
-Developed By - ben.millingtondrake@rackspace.com
-
-
-"""
+#!/usr/bin/env python
 
 import boto3
+import datetime
+import sys
+import xlsxwriter #https://xlsxwriter.readthedocs.io/
 from botocore.exceptions import ClientError
 from pprint import pprint as pp
-
-REGION = "eu-central-1"
 
 # Setup clients
 ec2 = boto3.client('ec2')
@@ -28,13 +19,12 @@ CHECKED_RESOURCES = [
     'AWS::RDS::DBInstance'
 ]
 
-# Stick to AWs naming for the below, to prevent false positives
+# Stick to AWS naming for the below, to prevent false positives
 INSECURE_SSL_CIPHERS = [
     "Protocol-TLSv1",
     "Protocol-TLSv1.1",
     "TLSv1",
     "TLSv1.1"
-
 ]
 
 EC2_INSTANCES = []
@@ -157,7 +147,7 @@ def populate_used_regions():
 
 def perform_security_checks():
 
-    """ Run functions for running security checks """
+    """ Run functions for executing security checks """
 
     global USED_REGIONS
 
