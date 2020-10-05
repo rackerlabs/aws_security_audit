@@ -20,7 +20,7 @@ class Config(object):
     DATE_TIME = datetime.datetime.now().strftime("%d/%b/%Y %H:%M")
     REPORT_NAME_SUFFIX = f" Security Report - {DATE_TIME}"
 
-    EC2_CHECK = False #True
+    EC2_CHECK = True
     RDS_CHECK = False #True
     ALB_CHECK = False #True
     S3_CHECK = False #True

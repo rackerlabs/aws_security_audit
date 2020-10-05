@@ -6,8 +6,10 @@ from pprint import pprint as pp
 
 from config import Config
 
+import scans.ec2
+
 # Setup clients
-ec2 = boto3.client('ec2')
+ec2_client = boto3.client('ec2')
 s3 = boto3.client('s3')
 
 # Pull config into main code.
@@ -22,80 +24,6 @@ S3_BUCKETS = []
 LOAD_BALANCERS = []
 RDS_INSTANCES = []
 
-def get_all_instances():
-
-    """ Get all ec2 instances in a given region """
-
-    global EC2_INSTANCES
-
-    try:
-        token = ""
-        while True:
-            response = ec2.describe_instances(NextToken=token)
-            EC2_INSTANCES += response['Reservations']
-
-            if 'NextToken' in response:
-                token = response['NextToken']
-            else:
-                break
-        return True
-        
-    except ClientError as e:
-        
-        print (e)
-
-def get_instance_block_device_mappings():
-
-    """ Get ebs devices from the ec2 response """
-    
-    global EC2_INSTANCES
-    global EBS_DEVICES
-
-    for instance in EC2_INSTANCES:
-        devices = []
-        name_tag = "NO_NAME_TAG"
-
-
-        for dev in instance['Instances'][0]['BlockDeviceMappings']:
-            ebs_vol_id = dev['Ebs']['VolumeId']
-            vol_arrtib = get_ebs_volume_attrib(ebs_vol_id)
-
-            devices.append({
-                "DeviceName": dev['DeviceName'],
-                "VolumeId": ebs_vol_id,
-                "Encrypted": vol_arrtib['Encrypted']
-            })
-
-        for t in instance['Instances'][0]['Tags']:
-            if t['Key'] == "Name":
-                name_tag = t["Value"]
-
-        EBS_DEVICES.append({
-            "name": name_tag if name_tag else "",
-            "instance_id": instance['Instances'][0]["InstanceId"],
-            "ebs_root": instance['Instances'][0]['RootDeviceName'],
-            "ebs_optimised": instance['Instances'][0]['EbsOptimized'],
-            "ebs_devices": devices
-        })
-        
-    return True
-
-def get_ebs_volume_attrib(vol_id):
-
-    """ get ebs volume attributes """
-
-    try:
-        volume = ec2.describe_volumes(
-            VolumeIds=[
-                vol_id,
-            ],
-        )
-
-        return(volume['Volumes'][0])
-        
-    except ClientError as e:
-        print (e)
-
 def populate_used_regions():
 
     """ 
@@ -107,7 +35,7 @@ def populate_used_regions():
     discovered_regions = set()
 
     try: 
-        all_regions = ec2.describe_regions()
+        all_regions = ec2_client.describe_regions()
     except ClientError as e:
         print (e)
         return(1)
@@ -347,10 +275,21 @@ def get_rds_clusters(region):
 
 def check_ec2(region):
     # Overwrite global ec2 object and update region
-    global ec2
-    ec2 = boto3.client('ec2', region)
-    get_all_instances()
-    get_instance_block_device_mappings()
+    global ec2_client
+    global EC2_INSTANCES
+    global EBS_DEVICES
+
+    ec2_client = boto3.client('ec2', region)
+
+    EC2_INSTANCES = scans.ec2.get_all_instances(
+        ec2_client, 
+        EC2_INSTANCES
+    )
+
+    EBS_DEVICES = scans.ec2.get_instance_block_device_mappings(
+        ec2_client, 
+        EC2_INSTANCES
+    )
     return
 
 def check_s3():
@@ -386,6 +325,7 @@ def print_details():
 def main():
     populate_used_regions()
     perform_security_checks()
+    pp(EBS_DEVICES)
     # print_details()
 
 if __name__ == "__main__":
