@@ -17,10 +17,12 @@ class Config(object):
         "TLSv1.1"
     ]
 
-    DATE_TIME = datetime.datetime.now().strftime("%d/%b/%Y %H:%M")
-    REPORT_NAME_SUFFIX = f" Security Report - {DATE_TIME}"
+    DATE_TIME = datetime.datetime.now().strftime("%d%b%Y %H%M")
+    REPORT_NAME_SUFFIX = f" Security Report - {DATE_TIME}.csv"
 
     EC2_CHECK = True
     RDS_CHECK = False #True
     ALB_CHECK = False #True
     S3_CHECK = False #True
+
+    EC2_CSV_NAME = "ec2" + REPORT_NAME_SUFFIX

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import boto3
+import boto3, sys
 from botocore.exceptions import ClientError
 from pprint import pprint as pp
 
@@ -24,9 +24,23 @@ S3_BUCKETS = []
 LOAD_BALANCERS = []
 RDS_INSTANCES = []
 
+class report_csv:
+
+    def __init__(self, output_file):
+        self.csv_file = output_file
+        self.csv_data = []
+
+    def newline(self, linedata):
+        self.csv_data.append(linedata)
+
+    def write(self):
+        with open(self.csv_file, "w") as output_file:
+            for entry in self.csv_data:
+                output_file.write(f"{entry}\r\n")
+
 def populate_used_regions():
 
-    """ 
+    """
     Use AWS config to get resources in each region and confirm which are in use
     (based on the resources we are looking for)
     """
@@ -315,17 +329,33 @@ def print_details():
         print(f'\tInstance ID:\t{instance["instance_id"]}')
         print(f'\tEBS Root:\t{instance["ebs_root"]}')
         print(f'\tEBS Optimised:\t{instance["ebs_optimised"]}')
-        print(f'\tEBS Devices:')
-        print(f'\t\tDevice\t\tVolume ID\t\tEncrypted')
+        print('\tEBS Devices:')
+        print('\t\tDevice\t\tVolume ID\t\tEncrypted')
         for ebs in instance['ebs_devices']:
             print(f'\t\t{ebs["DeviceName"]}\t{ebs["VolumeId"]}\t{ebs["Encrypted"]}')
 
         print('\n')
 
+def write_ec2_report():
+    global EBS_DEVICES
+    ec2_report = report_csv(Config.EC2_CSV_NAME)
+    ec2_report.newline("Instance Name,Instance ID,EBS Device,Volume ID,Encrypted,Root Device")
+    
+    for instance in EBS_DEVICES:
+        for device in instance['ebs_devices']:
+            root_device = "False"
+            if {instance['ebs_root']} == {device['DeviceName']}:
+                root_device = "True"
+
+            ec2_report.newline(f"{instance['name']},{instance['instance_id']},{device['DeviceName']},{device['VolumeId']},{device['Encrypted']},{root_device}")
+
+    ec2_report.write()
+    return
+
 def main():
     populate_used_regions()
     perform_security_checks()
-    pp(EBS_DEVICES)
+    write_ec2_report()
     # print_details()
 
 if __name__ == "__main__":
