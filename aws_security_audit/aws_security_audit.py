@@ -128,20 +128,20 @@ def check_s3_encryption():
     """ Check encryption of each S3 bucket """
 
     global S3_BUCKETS
-    buckets_encrypted = []
+    bucket_status = []
 
     try:
         for bucket in S3_BUCKETS:
             try:
                 s3.get_bucket_encryption(Bucket=bucket['bucket_name'])
-                buckets_encrypted.append({
+                bucket_status.append({
                     "bucket_name": bucket['bucket_name'],
                     "encrypted": "true"
                 })
             
             except ClientError as e:
                 if e.response['Error']['Code'] == 'ServerSideEncryptionConfigurationNotFoundError':
-                    buckets_encrypted.append({
+                    bucket_status.append({
                         "bucket_name": bucket['bucket_name'],
                         "encrypted": "false"
                     })
@@ -151,7 +151,7 @@ def check_s3_encryption():
     except ClientError as e:
         print (e)
 
-    S3_BUCKETS = buckets_encrypted
+    S3_BUCKETS = bucket_status
 
     return
 
@@ -201,6 +201,7 @@ def get_load_balancers(region):
             lb_object = {}
             lb_object['LB_TYPE'] = "elb"
             lb_object['LB_NAME'] = lb['LoadBalancerName']
+            lb_object['REGION'] = region
             lb_object['LISTENERS'] = []
 
             # get all listeners on the ELB
@@ -239,6 +240,7 @@ def get_load_balancers(region):
             lb_object = {}
             lb_object['LB_TYPE'] = "alb"
             lb_object['LB_NAME'] = lb['LoadBalancerName']
+            lb_object['REGION'] = region
             lb_object['LISTENERS'] = []
 
             listeners = elbv2.describe_listeners(LoadBalancerArn=lb['LoadBalancerArn'])
@@ -318,7 +320,6 @@ def check_alb(region):
 
 def check_rds(region):
     get_rds_clusters(region)
-    pp(RDS_INSTANCES)
     return
 
 def print_details():
@@ -352,11 +353,55 @@ def write_ec2_report():
     ec2_report.write()
     return
 
+def write_rds_report():
+    rds_report = report_csv(Config.RDS_CSV_NAME)
+    rds_report.newline(f"RDS Instance Name,Region,Encrypted")
+
+    for instance in RDS_INSTANCES:
+        rds_report.newline(f"{instance['NAME']},{instance['REGION']},{instance['ENCRYPTED']}")
+    
+    rds_report.write()
+
+def write_elb_report():
+    elb_report = report_csv(Config.ELB_CSV_NAME)
+    elb_report.newline(f"Load Balancer,Region,Type,Reference Policy,Ciphers,Insecure")
+
+    for lb in LOAD_BALANCERS:
+        for listener in lb['LISTENERS']:
+            if lb['LB_TYPE'] == "elb":
+                reference_policy = listener['REFERENCE_POLICY']
+            elif lb['LB_TYPE'] == "alb":
+                reference_policy = listener['POLICY_NAME']
+
+            for cipher in listener['CIPHERS']:
+                if cipher not in Config.SKIPPED_ALB_CIPHERS:
+                    if cipher in Config.INSECURE_SSL_CIPHERS:
+                        elb_report.newline(f"{lb['LB_NAME']},{lb['REGION']},{lb['LB_TYPE']},{reference_policy},{cipher},True")
+                    else:
+                        elb_report.newline(f"{lb['LB_NAME']},{lb['REGION']},{lb['LB_TYPE']},{reference_policy},{cipher}")
+
+        # if lb['LB_TYPE'] == "alb":
+        #     elb_report.newline(f"{lb['LB_NAME']},{lb['LB_TYPE']},")
+            
+    
+    elb_report.write()
+
+def write_s3_report():
+    s3_report = report_csv(Config.S3_CSV_NAME)
+    s3_report.newline(f"S3 Bucket,Encrypted")
+
+    for bucket in S3_BUCKETS:
+        s3_report.newline(f"{bucket['bucket_name']},{bucket['encrypted']}")
+    
+    s3_report.write()
+
 def main():
     populate_used_regions()
     perform_security_checks()
-    write_ec2_report()
-    # print_details()
+    # write_ec2_report()
+    # write_rds_report()
+    write_elb_report()
+    # write_s3_report()
 
 if __name__ == "__main__":
     main()
