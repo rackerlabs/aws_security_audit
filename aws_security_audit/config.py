@@ -25,10 +25,10 @@ class Config(object):
     DATE_TIME = datetime.datetime.now().strftime("%d%b%Y %H%M")
     REPORT_NAME_SUFFIX = f" Security Report - {DATE_TIME}.csv"
 
-    EC2_CHECK = False
-    RDS_CHECK = False
+    EC2_CHECK = True
+    RDS_CHECK = True
     ALB_CHECK = True
-    S3_CHECK = False
+    S3_CHECK = True
 
     EC2_CSV_NAME = "ec2" + REPORT_NAME_SUFFIX
     RDS_CSV_NAME = "rds" + REPORT_NAME_SUFFIX
