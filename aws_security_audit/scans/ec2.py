@@ -1,5 +1,6 @@
 
 from botocore.exceptions import ClientError
+from pprint import pprint as pp
 
 def get_all_instances(client, EC2_INSTANCES):
 
@@ -22,7 +23,7 @@ def get_all_instances(client, EC2_INSTANCES):
         print (e)
 
         
-def get_instance_block_device_mappings(client, EC2_INSTANCES):
+def get_instance_block_device_mappings(client, EC2_INSTANCES, region):
 
     """ Get ebs devices from the ec2 response """
 
@@ -31,7 +32,6 @@ def get_instance_block_device_mappings(client, EC2_INSTANCES):
     for instance in EC2_INSTANCES:
         devices = []
         name_tag = "NO_NAME_TAG"
-
 
         for dev in instance['Instances'][0]['BlockDeviceMappings']:
             ebs_vol_id = dev['Ebs']['VolumeId']
@@ -50,6 +50,7 @@ def get_instance_block_device_mappings(client, EC2_INSTANCES):
         EBS_DEVICES.append({
             "name": name_tag if name_tag else "",
             "instance_id": instance['Instances'][0]["InstanceId"],
+            "region": region,
             "ebs_root": instance['Instances'][0]['RootDeviceName'],
             "ebs_optimised": instance['Instances'][0]['EbsOptimized'],
             "ebs_devices": devices

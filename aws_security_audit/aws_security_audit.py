@@ -86,6 +86,7 @@ def perform_security_checks():
     # Kick off security checks for each region and resource type
     for region in USED_REGIONS:
         for resource in region['resources']:
+
             if Config.EC2_CHECK:
                 if resource['resourceType'] == 'AWS::EC2::Instance':
                     check_ec2(region['region'])
@@ -107,19 +108,19 @@ def perform_security_checks():
 def check_ec2(region):
     # Overwrite global ec2 object and update region
     global ec2_client
-    global EC2_INSTANCES
     global EBS_DEVICES
+    EC2_INSTANCES = []
 
     ec2_client = boto3.client('ec2', region)
-
     EC2_INSTANCES = scans.ec2.get_all_instances(
         ec2_client, 
         EC2_INSTANCES
     )
 
-    EBS_DEVICES = scans.ec2.get_instance_block_device_mappings(
+    EBS_DEVICES += scans.ec2.get_instance_block_device_mappings(
         ec2_client, 
-        EC2_INSTANCES
+        EC2_INSTANCES,
+        region
     )
     return
 
@@ -152,7 +153,7 @@ def check_rds(region):
 def write_ec2_report():
     global EBS_DEVICES
     ec2_report = report_csv(Config.EC2_CSV_NAME)
-    ec2_report.newline("Instance Name,Instance ID,EBS Device,Volume ID,Encrypted,Root Device")
+    ec2_report.newline("Instance Name,Instance ID,Region,EBS Device,Root Device,Volume ID,Encrypted")
     
     for instance in EBS_DEVICES:
         for device in instance['ebs_devices']:
@@ -160,7 +161,7 @@ def write_ec2_report():
             if {instance['ebs_root']} == {device['DeviceName']}:
                 root_device = "True"
 
-            ec2_report.newline(f"{instance['name']},{instance['instance_id']},{device['DeviceName']},{device['VolumeId']},{device['Encrypted']},{root_device}")
+            ec2_report.newline(f"{instance['name']},{instance['instance_id']},{instance['region']},{device['DeviceName']},{root_device},{device['VolumeId']},{device['Encrypted']}")
 
     ec2_report.write()
     return
