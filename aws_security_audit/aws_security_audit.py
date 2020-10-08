@@ -12,7 +12,7 @@ import scans.elb
 import scans.s3
 
 # Setup clients
-ec2_client = boto3.client('ec2')
+ec2_client = boto3.client('ec2', Config.DEFAULT_AWS_REGION)
 
 # Pull config into main code.
 CHECKED_RESOURCES = Config.CHECKED_RESOURCES

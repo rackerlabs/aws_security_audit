@@ -22,15 +22,21 @@ class Config(object):
         "Server-Defined-Cipher-Order"
     ]
 
+    # Name the report with date/time for sanity and prevent accidental over writing. 
     DATE_TIME = datetime.datetime.now().strftime("%d%b%Y %H%M")
     REPORT_NAME_SUFFIX = f" Security Report - {DATE_TIME}.csv"
-
-    EC2_CHECK = True
-    RDS_CHECK = True
-    ALB_CHECK = True
-    S3_CHECK = True
 
     EC2_CSV_NAME = "ec2" + REPORT_NAME_SUFFIX
     RDS_CSV_NAME = "rds" + REPORT_NAME_SUFFIX
     ELB_CSV_NAME = "elb" + REPORT_NAME_SUFFIX
     S3_CSV_NAME = "s3" + REPORT_NAME_SUFFIX
+
+    # Set default region. This is needed to lookup all available regions.
+    DEFAULT_AWS_REGION = "eu-west-1"
+
+
+    # Ability to disable individual checks. More for DEBUG purposes.
+    EC2_CHECK = True
+    RDS_CHECK = True
+    ALB_CHECK = True
+    S3_CHECK = True
