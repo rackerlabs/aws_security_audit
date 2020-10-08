@@ -4,12 +4,15 @@ import boto3, sys
 from botocore.exceptions import ClientError
 from pprint import pprint as pp
 
-from config import Config
+try:
+    from .config import Config
+except ImportError:
+    from config import Config
 
-import scans.ec2
-import scans.rds
-import scans.elb
-import scans.s3
+try:
+    from .scans import ec2, rds, elb, s3
+except ImportError:
+    from scans import ec2, rds, elb, s3
 
 # Setup clients
 ec2_client = boto3.client('ec2', Config.DEFAULT_AWS_REGION)
@@ -112,12 +115,12 @@ def check_ec2(region):
     EC2_INSTANCES = []
 
     ec2_client = boto3.client('ec2', region)
-    EC2_INSTANCES = scans.ec2.get_all_instances(
+    EC2_INSTANCES = ec2.get_all_instances(
         ec2_client, 
         EC2_INSTANCES
     )
 
-    EBS_DEVICES += scans.ec2.get_instance_block_device_mappings(
+    EBS_DEVICES += ec2.get_instance_block_device_mappings(
         ec2_client, 
         EC2_INSTANCES,
         region
@@ -129,8 +132,8 @@ def check_s3():
 
     s3_client = boto3.client('s3')
 
-    S3_BUCKETS = scans.s3.get_all_s3(s3_client)
-    S3_BUCKETS = scans.s3.check_s3_encryption(s3_client, S3_BUCKETS)
+    S3_BUCKETS = s3.get_all_s3(s3_client)
+    S3_BUCKETS = s3.check_s3_encryption(s3_client, S3_BUCKETS)
     return
 
 def check_alb(region):
@@ -139,7 +142,7 @@ def check_alb(region):
     elb_client = boto3.client('elb', region)
     elbv2_client = boto3.client('elbv2', region)
 
-    LOAD_BALANCERS = scans.elb.get_load_balancers(region, elb_client, elbv2_client)
+    LOAD_BALANCERS = elb.get_load_balancers(region, elb_client, elbv2_client)
     return
 
 def check_rds(region):
@@ -147,7 +150,7 @@ def check_rds(region):
 
     rds_client = boto3.client('rds', region)
 
-    RDS_INSTANCES = scans.rds.get_rds_clusters(rds_client, region)
+    RDS_INSTANCES = rds.get_rds_clusters(rds_client, region)
     return
 
 def write_ec2_report():
