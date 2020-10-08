@@ -1,6 +1,5 @@
 
 from botocore.exceptions import ClientError
-from pprint import pprint as pp
 
 def get_all_instances(client, EC2_INSTANCES):
 
