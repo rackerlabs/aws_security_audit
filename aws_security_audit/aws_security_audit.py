@@ -2,7 +2,6 @@
 
 import boto3, sys
 from botocore.exceptions import ClientError
-from pprint import pprint as pp
 
 try:
     from .config import Config
@@ -134,6 +133,7 @@ def check_s3():
 
     S3_BUCKETS = s3.get_all_s3(s3_client)
     S3_BUCKETS = s3.check_s3_encryption(s3_client, S3_BUCKETS)
+    S3_BUCKETS = s3.check_s3_public(s3_client, S3_BUCKETS)
     return
 
 def check_alb(region):
@@ -204,10 +204,10 @@ def write_elb_report():
 
 def write_s3_report():
     s3_report = report_csv(Config.S3_CSV_NAME)
-    s3_report.newline(f"S3 Bucket,Encrypted")
+    s3_report.newline(f"S3 Bucket,Encrypted,Public")
 
     for bucket in S3_BUCKETS:
-        s3_report.newline(f"{bucket['bucket_name']},{bucket['encrypted']}")
+        s3_report.newline(f"{bucket['bucket_name']},{bucket['encrypted']},{bucket['is_public']}")
     
     s3_report.write()
 

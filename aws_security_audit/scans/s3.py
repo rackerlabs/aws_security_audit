@@ -47,3 +47,33 @@ def check_s3_encryption(client, S3_BUCKETS):
         print (e)
 
     return bucket_status
+
+def check_s3_public(client, S3_BUCKETS):
+
+    """ Check whether S3 bucket is public """
+
+    bucket_public = []
+
+    def append_policy(is_public):
+        bucket_public.append({
+            "bucket_name": bucket['bucket_name'],
+            "encrypted": bucket['encrypted'],
+            "is_public": is_public
+        })
+
+    try:
+        for bucket in S3_BUCKETS:
+            try:
+                response = client.get_bucket_policy_status(Bucket=bucket['bucket_name'])
+                append_policy(response['PolicyStatus']['IsPublic'])
+            
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'NoSuchBucketPolicy':
+                    append_policy("False")
+                else:
+                    print (e)
+
+    except ClientError as e:
+        print (e)
+
+    return bucket_public
