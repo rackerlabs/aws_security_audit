@@ -6,7 +6,7 @@ AWS Config is used to check for monitored resources in every region.
 
 Checks include:
 * EBS volume encryption status for all mounted volumed.
-* S3 bucket default encryption (this does not check individual objects due to cost implications and speed). 
+* S3 bucket oublic access and default encryption (this does not check individual objects due to cost implications and speed). 
 * Ciphers used on all in use alb and elb. Flags known insecure ciphers:
 	* TLS-1.0
 	* TLS-1.1

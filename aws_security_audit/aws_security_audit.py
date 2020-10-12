@@ -194,11 +194,7 @@ def write_elb_report():
                     if cipher in Config.INSECURE_SSL_CIPHERS:
                         elb_report.newline(f"{lb['LB_NAME']},{lb['REGION']},{lb['LB_TYPE']},{reference_policy},{cipher},True")
                     else:
-                        elb_report.newline(f"{lb['LB_NAME']},{lb['REGION']},{lb['LB_TYPE']},{reference_policy},{cipher}")
-
-        # if lb['LB_TYPE'] == "alb":
-        #     elb_report.newline(f"{lb['LB_NAME']},{lb['LB_TYPE']},")
-            
+                        elb_report.newline(f"{lb['LB_NAME']},{lb['REGION']},{lb['LB_TYPE']},{reference_policy},{cipher}")            
     
     elb_report.write()
 
