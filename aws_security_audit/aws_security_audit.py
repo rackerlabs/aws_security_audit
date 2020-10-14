@@ -13,9 +13,6 @@ try:
 except ImportError:
     from scans import ec2, rds, elb, s3
 
-# Setup clients
-ec2_client = boto3.client('ec2', Config.DEFAULT_AWS_REGION)
-
 # Pull config into main code.
 CHECKED_RESOURCES = Config.CHECKED_RESOURCES
 INSECURE_SSL_CIPHERS = Config.INSECURE_SSL_CIPHERS
@@ -53,6 +50,7 @@ def populate_used_regions():
     discovered_regions = set()
 
     try: 
+        ec2_client = boto3.client('ec2', Config.DEFAULT_AWS_REGION, aws_access_key_id=Config.AWS_ACCESS_ID, aws_secret_access_key=Config.AWS_SECRET_KEY, aws_session_token=Config.AWS_SESSION_TOKEN)
         all_regions = ec2_client.describe_regions()
     except ClientError as e:
         print (e)
@@ -61,7 +59,7 @@ def populate_used_regions():
     for region in all_regions['Regions']:
         try:
             # Use AWS config to list all resources in the region
-            config_client = boto3.client('config', region['RegionName'])
+            config_client = boto3.client('config', region['RegionName'], aws_access_key_id=Config.AWS_ACCESS_ID, aws_secret_access_key=Config.AWS_SECRET_KEY, aws_session_token=Config.AWS_SESSION_TOKEN)
             discovered_rescources = config_client.get_discovered_resource_counts()
         
         except ClientError as e:
@@ -109,11 +107,10 @@ def perform_security_checks():
 
 def check_ec2(region):
     # Overwrite global ec2 object and update region
-    global ec2_client
     global EBS_DEVICES
     EC2_INSTANCES = []
 
-    ec2_client = boto3.client('ec2', region)
+    ec2_client = boto3.client('ec2', region, aws_access_key_id=Config.AWS_ACCESS_ID, aws_secret_access_key=Config.AWS_SECRET_KEY, aws_session_token=Config.AWS_SESSION_TOKEN)
     EC2_INSTANCES = ec2.get_all_instances(
         ec2_client, 
         EC2_INSTANCES
@@ -129,7 +126,7 @@ def check_ec2(region):
 def check_s3():
     global S3_BUCKETS
 
-    s3_client = boto3.client('s3')
+    s3_client = boto3.client('s3', aws_access_key_id=Config.AWS_ACCESS_ID, aws_secret_access_key=Config.AWS_SECRET_KEY, aws_session_token=Config.AWS_SESSION_TOKEN)
 
     S3_BUCKETS = s3.get_all_s3(s3_client)
     S3_BUCKETS = s3.check_s3_encryption(s3_client, S3_BUCKETS)
@@ -139,8 +136,8 @@ def check_s3():
 def check_alb(region):
     global LOAD_BALANCERS
 
-    elb_client = boto3.client('elb', region)
-    elbv2_client = boto3.client('elbv2', region)
+    elb_client = boto3.client('elb', region, aws_access_key_id=Config.AWS_ACCESS_ID, aws_secret_access_key=Config.AWS_SECRET_KEY, aws_session_token=Config.AWS_SESSION_TOKEN)
+    elbv2_client = boto3.client('elbv2', region, aws_access_key_id=Config.AWS_ACCESS_ID, aws_secret_access_key=Config.AWS_SECRET_KEY, aws_session_token=Config.AWS_SESSION_TOKEN)
 
     LOAD_BALANCERS = elb.get_load_balancers(region, elb_client, elbv2_client)
     return

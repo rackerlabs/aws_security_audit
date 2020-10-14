@@ -1,4 +1,5 @@
 import datetime
+import os
 
 class Config(object):
     # A list of AWS Config variables to check for
@@ -40,3 +41,10 @@ class Config(object):
     RDS_CHECK = True
     ALB_CHECK = True
     S3_CHECK = True
+
+    # Add ability to pass additional boto config if needed
+    AWS_ACCESS_ID = os.environ['AWS_ACCESS_KEY_ID'] if 'AWS_ACCESS_KEY_ID' in os.environ else None
+    AWS_SECRET_KEY = os.environ['AWS_SECRET_ACCESS_KEY'] if 'AWS_SECRET_ACCESS_KEY' in os.environ else None
+    AWS_SESSION_TOKEN = os.environ['AWS_SESSION_TOKEN'] if 'AWS_SESSION_TOKEN' in os.environ else None
+
+    BOTO_CONFIG = None
