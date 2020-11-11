@@ -5,6 +5,7 @@ class Config(object):
     # A list of AWS Config variables to check for
     CHECKED_RESOURCES = [
         'AWS::ElasticLoadBalancingV2::LoadBalancer',
+        'AWS::ElasticLoadBalancing::LoadBalancer',
         'AWS::S3::Bucket',
         'AWS::EC2::Instance',
         'AWS::RDS::DBInstance'
