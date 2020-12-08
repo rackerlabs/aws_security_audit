@@ -42,10 +42,11 @@ def get_instance_block_device_mappings(client, EC2_INSTANCES, region):
                 "Encrypted": vol_arrtib['Encrypted']
             })
 
-        for t in instance['Instances'][0]['Tags']:
-            if t['Key'] == "Name":
-                name_tag = t["Value"]
-
+        try: 
+            name_tag = [tag['Value'] for tag in instance['Instances'][0]['Tags'] if tag['Key'] == 'Name'][0]
+        except:
+            name_tag = "No Name"
+            
         EBS_DEVICES.append({
             "name": name_tag if name_tag else "",
             "instance_id": instance['Instances'][0]["InstanceId"],
