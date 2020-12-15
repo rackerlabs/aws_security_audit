@@ -90,18 +90,22 @@ def perform_security_checks():
             if Config.EC2_CHECK:
                 if resource['resourceType'] == 'AWS::EC2::Instance':
                     check_ec2(region['region'])
+                    write_ec2_report()
 
             if Config.S3_CHECK:
                 if resource['resourceType'] == 'AWS::S3::Bucket' and not S3_BUCKETS:
                     check_s3()
+                    write_s3_report()
 
             if Config.ALB_CHECK:
                 if resource['resourceType'] == 'AWS::ElasticLoadBalancingV2::LoadBalancer':
                     check_alb(region['region'])
+                    write_elb_report()
 
             if Config.RDS_CHECK:
                 if resource['resourceType'] == 'AWS::RDS::DBInstance':
                     check_rds(region['region'])
+                    write_rds_report()
 
     return
 
