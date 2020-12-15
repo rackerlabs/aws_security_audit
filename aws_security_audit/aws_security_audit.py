@@ -211,10 +211,6 @@ def write_s3_report():
 def main():
     populate_used_regions()
     perform_security_checks()
-    write_ec2_report()
-    write_rds_report()
-    write_elb_report()
-    write_s3_report()
 
 if __name__ == "__main__":
     main()
